@@ -47,7 +47,7 @@ class FileItemReaderTest(
         }
 
         @Bean
-        fun csvStep(reader: ItemReader<Input>): Step {
+        fun csvStep(@Qualifier("csvReader") reader: ItemReader<Input>): Step {
             return stepBuilderFactory.get("csvStep")
                 .chunk<Input, Input>(10)
                 .reader(reader)
@@ -60,7 +60,7 @@ class FileItemReaderTest(
         }
 
         @Bean
-        fun reader(): FlatFileItemReader<Input> {
+        fun csvReader(): FlatFileItemReader<Input> {
             return FlatFileItemReaderBuilder<Input>()
                 .name("csvItemReader")
                 .resource(ClassPathResource("file-item-reader/file-batch-persons.csv"))
