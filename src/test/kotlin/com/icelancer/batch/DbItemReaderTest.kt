@@ -101,6 +101,7 @@ class DbItemReaderTest(
             return HibernateCursorItemReaderBuilder<People>()
                 .name("hibernateCursorItemReader")
                 .sessionFactory(sessionFactory)
+                .useStatelessSession(true)
                 .queryString("from PeopleModel")
                 .build()
         }
