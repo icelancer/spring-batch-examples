@@ -71,9 +71,9 @@ class DbItemReaderTest(
         }
 
         @Bean
-        fun dbStep(@Qualifier("jdbcCursorItemReader") reader: ItemReader<PeopleModel>): Step {
+        fun dbStep(@Qualifier("jdbcCursorItemReader") reader: ItemReader<People>): Step {
             return stepBuilderFactory.get("dbStep")
-                .chunk<PeopleModel, PeopleModel>(10)
+                .chunk<People, People>(10)
                 .reader(reader)
                 .processor(PassThroughItemProcessor())
                 .writer {
@@ -84,21 +84,21 @@ class DbItemReaderTest(
         }
 
         @Bean
-        fun jdbcCursorItemReader(dataSource: DataSource): JdbcCursorItemReader<PeopleModel> {
-            return JdbcCursorItemReaderBuilder<PeopleModel>()
+        fun jdbcCursorItemReader(dataSource: DataSource): JdbcCursorItemReader<People> {
+            return JdbcCursorItemReaderBuilder<People>()
                 .name("jdbcCursorItemReader")
                 .fetchSize(10)
                 .dataSource(dataSource)
-                .rowMapper(DataClassRowMapper(PeopleModel::class.java))
+                .rowMapper(DataClassRowMapper(People::class.java))
                 .sql("select people_id, first_name, last_name, age, gender, pick from people")
                 .build()
         }
 
         @Bean
-        fun hibernateCursorItemReader(entityManagerFactory: EntityManagerFactory): HibernateCursorItemReader<PeopleModel> {
+        fun hibernateCursorItemReader(entityManagerFactory: EntityManagerFactory): HibernateCursorItemReader<People> {
             val sessionFactory = entityManagerFactory.unwrap(SessionFactory::class.java)
 
-            return HibernateCursorItemReaderBuilder<PeopleModel>()
+            return HibernateCursorItemReaderBuilder<People>()
                 .name("hibernateCursorItemReader")
                 .sessionFactory(sessionFactory)
                 .queryString("from PeopleModel")
@@ -114,7 +114,7 @@ class DbItemReaderTest(
 
 @Entity
 @Table(name = "people")
-data class PeopleModel(
+data class People(
     @Id
     @Column(name = "people_id")
     val peopleId: Int,
