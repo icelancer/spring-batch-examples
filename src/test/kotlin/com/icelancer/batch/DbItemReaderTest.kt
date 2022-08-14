@@ -40,7 +40,8 @@ import javax.sql.DataSource
     properties = [
         "spring.batch.job.enabled=false",
         "spring.jpa.hibernate.ddl-auto=none",
-        "spring.jpa.show-sql=true"
+        "spring.jpa.show-sql=true",
+        "logging.level.org.springframework.batch=INFO"
     ]
 )
 class DbItemReaderTest(
@@ -70,7 +71,7 @@ class DbItemReaderTest(
         }
 
         @Bean
-        fun dbStep(@Qualifier("hibernateCursorItemReader") reader: ItemReader<PeopleModel>): Step {
+        fun dbStep(@Qualifier("jdbcCursorItemReader") reader: ItemReader<PeopleModel>): Step {
             return stepBuilderFactory.get("dbStep")
                 .chunk<PeopleModel, PeopleModel>(10)
                 .reader(reader)
