@@ -1,5 +1,6 @@
 package com.icelancer.batch
 
+import org.hibernate.SessionFactory
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.batch.core.BatchStatus
@@ -9,31 +10,39 @@ import org.springframework.batch.core.configuration.annotation.EnableBatchProces
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory
 import org.springframework.batch.item.ItemReader
+import org.springframework.batch.item.database.HibernateCursorItemReader
 import org.springframework.batch.item.database.JdbcCursorItemReader
+import org.springframework.batch.item.database.builder.HibernateCursorItemReaderBuilder
 import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder
 import org.springframework.batch.item.support.PassThroughItemProcessor
 import org.springframework.batch.test.JobLauncherTestUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.jdbc.core.DataClassRowMapper
 import org.springframework.test.context.jdbc.Sql
+import javax.persistence.Column
+import javax.persistence.Entity
+import javax.persistence.EntityManagerFactory
+import javax.persistence.Id
+import javax.persistence.Table
 import javax.sql.DataSource
 
 @Sql(scripts = ["/db-item-reader/people.sql"])
 @SpringBootTest(
     classes = [
         DbItemReaderTest::class,
-        DbItemReaderTest.BatchConfig::class
+        DbItemReaderTest.BatchConfig::class,
+        SpringBatchExamplesApplication::class
     ],
     properties = [
-        "spring.batch.job.enabled=false"
+        "spring.batch.job.enabled=false",
+        "spring.jpa.hibernate.ddl-auto=none",
+        "spring.jpa.show-sql=true"
     ]
 )
-@EnableAutoConfiguration
 class DbItemReaderTest(
     @Autowired
     private val jobLauncherTestUtils: JobLauncherTestUtils
@@ -52,7 +61,6 @@ class DbItemReaderTest(
         @Autowired
         val stepBuilderFactory: StepBuilderFactory
     ) {
-
         @Bean
         fun dbJob(@Qualifier("dbStep") dbStep: Step): Job {
             return jobBuilderFactory.get("dbJob")
@@ -62,7 +70,7 @@ class DbItemReaderTest(
         }
 
         @Bean
-        fun dbStep(@Qualifier("jdbcCursorItemReader") reader: ItemReader<PeopleModel>): Step {
+        fun dbStep(@Qualifier("hibernateCursorItemReader") reader: ItemReader<PeopleModel>): Step {
             return stepBuilderFactory.get("dbStep")
                 .chunk<PeopleModel, PeopleModel>(10)
                 .reader(reader)
@@ -86,17 +94,32 @@ class DbItemReaderTest(
         }
 
         @Bean
+        fun hibernateCursorItemReader(entityManagerFactory: EntityManagerFactory): HibernateCursorItemReader<PeopleModel> {
+            val sessionFactory = entityManagerFactory.unwrap(SessionFactory::class.java)
+
+            return HibernateCursorItemReaderBuilder<PeopleModel>()
+                .name("hibernateCursorItemReader")
+                .sessionFactory(sessionFactory)
+                .queryString("from PeopleModel")
+                .build()
+        }
+
+        @Bean
         fun jobLauncherTestUtils(): JobLauncherTestUtils {
             return JobLauncherTestUtils()
         }
     }
-
-    class PeopleModel(
-        val peopleId: Int,
-        val firstName: String,
-        val lastName: String,
-        val age: String,
-        val gender: String,
-        val pick: String
-    )
 }
+
+@Entity
+@Table(name = "people")
+data class PeopleModel(
+    @Id
+    @Column(name = "people_id")
+    val peopleId: Int,
+    val firstName: String,
+    val lastName: String,
+    val age: String,
+    val gender: String,
+    val pick: String
+)
