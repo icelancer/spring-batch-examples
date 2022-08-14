@@ -18,6 +18,7 @@ import org.springframework.batch.item.support.PassThroughItemProcessor
 import org.springframework.batch.test.JobLauncherTestUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -34,8 +35,7 @@ import javax.sql.DataSource
 @SpringBootTest(
     classes = [
         DbItemReaderTest::class,
-        DbItemReaderTest.BatchConfig::class,
-        SpringBatchExamplesApplication::class
+        DbItemReaderTest.BatchConfig::class
     ],
     properties = [
         "spring.batch.job.enabled=false",
@@ -44,6 +44,7 @@ import javax.sql.DataSource
         "logging.level.org.springframework.batch=INFO"
     ]
 )
+@EnableAutoConfiguration
 class DbItemReaderTest(
     @Autowired
     private val jobLauncherTestUtils: JobLauncherTestUtils
