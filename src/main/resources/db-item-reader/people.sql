@@ -1,10 +1,10 @@
 CREATE TABLE people(
 	people_id INTEGER NOT NULL PRIMARY KEY,
-	first_name VARCHAR(100),
-	last_name VARCHAR(100),
-	age VARCHAR(100),
-	gender VARCHAR(20),
-	pick VARCHAR(100)
+	first_name VARCHAR(20),
+	last_name VARCHAR(20),
+	age VARCHAR(3),
+	gender VARCHAR(10),
+	pick VARCHAR(10)
 );
 
 insert into people (people_id, first_name, last_name, age, gender, pick) values (1, 'Beatrice', 'McGee', '35', 'Female', 'BLUE');
