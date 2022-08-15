@@ -40,7 +40,8 @@ import javax.sql.DataSource
         "spring.jpa.hibernate.ddl-auto=none",
         "spring.jpa.show-sql=true",
         "logging.level.org.springframework.batch=INFO",
-        "logging.level.org.springframework.jdbc.core.JdbcTemplate=DEBUG"
+        "logging.level.org.springframework.jdbc.core.JdbcTemplate=DEBUG",
+        "logging.level.org.springframework.jdbc.core=TRACE"
     ]
 )
 @EnableAutoConfiguration
