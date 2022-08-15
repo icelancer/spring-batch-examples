@@ -104,6 +104,21 @@ class PagingItemReaderTest(
         }
 
         @Bean
+        fun jpaPagingItemReader(
+            entityManagerFactory: EntityManagerFactory
+        ): JpaPagingItemReader<PeopleEntity> {
+            val parameterValues = mapOf("pick" to "RED")
+
+            return JpaPagingItemReaderBuilder<PeopleEntity>()
+                .name("jpaPagingItemReader")
+                .entityManagerFactory(entityManagerFactory)
+                .queryString("select p from PeopleEntity p where p.pick = :pick")
+                .parameterValues(parameterValues)
+                .pageSize(10)
+                .build()
+        }
+
+        @Bean
         fun jdbcPagingItemReader(
             dataSource: DataSource,
             provider: PagingQueryProvider
@@ -121,27 +136,16 @@ class PagingItemReaderTest(
         }
 
         @Bean
-        fun jpaPagingItemReader(entityManagerFactory: EntityManagerFactory): JpaPagingItemReader<PeopleEntity> {
-            val parameterValues = mapOf("pick" to "RED")
-
-            return JpaPagingItemReaderBuilder<PeopleEntity>()
-                .name("jpaPagingItemReader")
-                .entityManagerFactory(entityManagerFactory)
-                .queryString("select p from PeopleEntity p where p.pick = :pick")
-                .parameterValues(parameterValues)
-                .pageSize(10)
-                .build()
-        }
-
-        @Bean
-        fun jdbcPagingQueryProvider(dataSource: DataSource): PagingQueryProvider {
+        fun jdbcPagingQueryProvider(
+            dataSource: DataSource
+        ): SqlPagingQueryProviderFactoryBean {
             return SqlPagingQueryProviderFactoryBean().apply {
                 this.setSelectClause("select people_id, first_name, last_name, age, gender, pick")
                 this.setFromClause("from people")
                 this.setWhereClause("where pick=:pick")
                 this.setSortKey("people_id")
                 this.setDataSource(dataSource)
-            }.`object`
+            }
         }
 
         @Bean
