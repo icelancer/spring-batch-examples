@@ -34,8 +34,8 @@ import javax.sql.DataSource
 @Sql(scripts = ["/db-item-reader/people.sql"])
 @SpringBootTest(
     classes = [
-        DbItemReaderTest::class,
-        DbItemReaderTest.BatchConfig::class
+        CursorItemReaderTest::class,
+        CursorItemReaderTest.BatchConfig::class
     ],
     properties = [
         "spring.batch.job.enabled=false",
@@ -45,7 +45,7 @@ import javax.sql.DataSource
     ]
 )
 @EnableAutoConfiguration
-class DbItemReaderTest(
+class CursorItemReaderTest(
     @Autowired
     private val jobLauncherTestUtils: JobLauncherTestUtils
 ) {
