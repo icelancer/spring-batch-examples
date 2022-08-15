@@ -48,15 +48,28 @@ class FileItemReaderTest(
         val stepBuilderFactory: StepBuilderFactory
     ) {
         @Bean
-        fun fileJob(@Qualifier("fileStep") fileStep: Step): Job {
+        fun fileJob(
+            @Qualifier("csvStep") csvStep: Step,
+            @Qualifier("jsonStep") jsonStep: Step
+        ): Job {
             return jobBuilderFactory.get("fileJob")
-                .start(fileStep)
+                .start(csvStep)
+                .next(jsonStep)
                 .build()
         }
 
         @Bean
-        fun fileStep(@Qualifier("csvReader") reader: ItemReader<Input>): Step {
-            return stepBuilderFactory.get("fileStep")
+        fun jsonStep(@Qualifier("jsonReader") reader: ItemReader<Input>): Step {
+            return createStep("jsonReader", reader)
+        }
+
+        @Bean
+        fun csvStep(@Qualifier("csvReader") reader: ItemReader<Input>): Step {
+            return createStep("csvStep", reader)
+        }
+
+        fun createStep(name: String, reader: ItemReader<Input>): Step {
+            return stepBuilderFactory.get("name")
                 .chunk<Input, Input>(10)
                 .reader(reader)
                 .processor(PassThroughItemProcessor())
