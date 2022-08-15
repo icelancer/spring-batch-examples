@@ -1,5 +1,6 @@
 package com.icelancer.batch.itemReader
 
+import com.icelancer.batch.itemReader.entity.PeopleEntity
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.batch.core.BatchStatus
@@ -25,11 +26,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.jdbc.core.DataClassRowMapper
 import org.springframework.test.context.jdbc.Sql
-import javax.persistence.Column
-import javax.persistence.Entity
 import javax.persistence.EntityManagerFactory
-import javax.persistence.Id
-import javax.persistence.Table
 import javax.sql.DataSource
 
 @Sql(scripts = ["/db-item-reader/people.sql"])
@@ -67,19 +64,36 @@ class PagingItemReaderTest(
         val stepBuilderFactory: StepBuilderFactory
     ) {
         @Bean
-        fun job(@Qualifier("pagingStep") step: Step): Job {
+        fun job(
+            @Qualifier("jdbcPagingStep") jdbcPagingStep: Step,
+            @Qualifier("jpaPagingStep") jpaPagingStep: Step
+
+        ): Job {
             return jobBuilderFactory.get("pagingJob")
-                .start(step)
+                .start(jdbcPagingStep)
+                .next(jpaPagingStep)
                 .build()
         }
 
         @Bean
-        fun pagingStep(
-            @Qualifier("jpaPagingItemReader")
-            reader: ItemReader<PeopleEntity2>
+        fun jdbcPagingStep(
+            @Qualifier("jdbcPagingItemReader")
+            reader: ItemReader<PeopleEntity>
         ): Step {
-            return stepBuilderFactory.get("pagingReader")
-                .chunk<PeopleEntity2, PeopleEntity2>(10)
+            return createStep("jdbcPagingStep", reader)
+        }
+
+        @Bean
+        fun jpaPagingStep(
+            @Qualifier("jpaPagingItemReader")
+            reader: ItemReader<PeopleEntity>
+        ): Step {
+            return createStep("jpaPagingStep", reader)
+        }
+
+        fun createStep(name: String, reader: ItemReader<PeopleEntity>): Step {
+            return stepBuilderFactory.get(name)
+                .chunk<PeopleEntity, PeopleEntity>(10)
                 .reader(reader)
                 .processor(PassThroughItemProcessor())
                 .writer {
@@ -93,15 +107,25 @@ class PagingItemReaderTest(
         fun jdbcPagingItemReader(
             dataSource: DataSource,
             provider: PagingQueryProvider
-        ): JdbcPagingItemReader<PeopleEntity2> {
+        ): JdbcPagingItemReader<PeopleEntity> {
             val parameterValues = mapOf("pick" to "RED")
 
-            return JdbcPagingItemReaderBuilder<PeopleEntity2>()
+            return JdbcPagingItemReaderBuilder<PeopleEntity>()
                 .name("jdbcPagingItemReader")
                 .dataSource(dataSource)
                 .queryProvider(provider)
                 .parameterValues(parameterValues)
-                .rowMapper(DataClassRowMapper(PeopleEntity2::class.java))
+                .rowMapper(DataClassRowMapper(PeopleEntity::class.java))
+                .pageSize(10)
+                .build()
+        }
+
+        @Bean
+        fun jpaPagingItemReader(entityManagerFactory: EntityManagerFactory): JpaPagingItemReader<PeopleEntity> {
+            return JpaPagingItemReaderBuilder<PeopleEntity>()
+                .name("jpaPagingItemReader")
+                .entityManagerFactory(entityManagerFactory)
+                .queryString("select p from PeopleEntity p")
                 .pageSize(10)
                 .build()
         }
@@ -118,31 +142,8 @@ class PagingItemReaderTest(
         }
 
         @Bean
-        fun jpaPagingItemReader(entityManagerFactory: EntityManagerFactory): JpaPagingItemReader<PeopleEntity2> {
-            return JpaPagingItemReaderBuilder<PeopleEntity2>()
-                .name("jpaPagingItemReader")
-                .entityManagerFactory(entityManagerFactory)
-                .queryString("select p from People p")
-                .pageSize(10)
-                .build()
-        }
-
-        @Bean
         fun jobLauncherTestUtils(): JobLauncherTestUtils {
             return JobLauncherTestUtils()
         }
     }
 }
-
-@Entity
-@Table(name = "people")
-data class PeopleEntity2(
-    @Id
-    @Column(name = "people_id")
-    val peopleId: Int,
-    val firstName: String,
-    val lastName: String,
-    val age: String,
-    val gender: String,
-    val pick: String
-)

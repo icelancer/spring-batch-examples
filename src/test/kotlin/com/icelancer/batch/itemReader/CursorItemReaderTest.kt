@@ -1,5 +1,6 @@
 package com.icelancer.batch.itemReader
 
+import com.icelancer.batch.itemReader.entity.PeopleEntity
 import org.hibernate.SessionFactory
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -24,11 +25,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.jdbc.core.DataClassRowMapper
 import org.springframework.test.context.jdbc.Sql
-import javax.persistence.Column
-import javax.persistence.Entity
 import javax.persistence.EntityManagerFactory
-import javax.persistence.Id
-import javax.persistence.Table
 import javax.sql.DataSource
 
 @Sql(scripts = ["/db-item-reader/people.sql"])
@@ -64,17 +61,36 @@ class CursorItemReaderTest(
         val stepBuilderFactory: StepBuilderFactory
     ) {
         @Bean
-        fun dbJob(@Qualifier("dbStep") dbStep: Step): Job {
+        fun dbJob(
+            @Qualifier("hibernateStep") hibernateStep: Step,
+            @Qualifier("jdbcStep") jdbcStep: Step
+        ): Job {
             return jobBuilderFactory.get("dbJob")
-                .start(dbStep)
+                .start(hibernateStep)
+                .next(jdbcStep)
                 .preventRestart()
                 .build()
         }
 
         @Bean
-        fun dbStep(@Qualifier("jdbcCursorItemReader") reader: ItemReader<People>): Step {
-            return stepBuilderFactory.get("dbStep")
-                .chunk<People, People>(10)
+        fun jdbcStep(
+            @Qualifier("jdbcCursorItemReader")
+            reader: ItemReader<PeopleEntity>
+        ): Step {
+            return createStep("jdbcStep", reader)
+        }
+
+        @Bean
+        fun hibernateStep(
+            @Qualifier("hibernateCursorItemReader")
+            reader: ItemReader<PeopleEntity>
+        ): Step {
+            return createStep("hibernateStep", reader)
+        }
+
+        fun createStep(name: String, reader: ItemReader<PeopleEntity>): Step {
+            return stepBuilderFactory.get(name)
+                .chunk<PeopleEntity, PeopleEntity>(10)
                 .reader(reader)
                 .processor(PassThroughItemProcessor())
                 .writer {
@@ -85,25 +101,25 @@ class CursorItemReaderTest(
         }
 
         @Bean
-        fun jdbcCursorItemReader(dataSource: DataSource): JdbcCursorItemReader<People> {
-            return JdbcCursorItemReaderBuilder<People>()
+        fun jdbcCursorItemReader(dataSource: DataSource): JdbcCursorItemReader<PeopleEntity> {
+            return JdbcCursorItemReaderBuilder<PeopleEntity>()
                 .name("jdbcCursorItemReader")
                 .fetchSize(10)
                 .dataSource(dataSource)
-                .rowMapper(DataClassRowMapper(People::class.java))
+                .rowMapper(DataClassRowMapper(PeopleEntity::class.java))
                 .sql("select people_id, first_name, last_name, age, gender, pick from people")
                 .build()
         }
 
         @Bean
-        fun hibernateCursorItemReader(entityManagerFactory: EntityManagerFactory): HibernateCursorItemReader<People> {
+        fun hibernateCursorItemReader(entityManagerFactory: EntityManagerFactory): HibernateCursorItemReader<PeopleEntity> {
             val sessionFactory = entityManagerFactory.unwrap(SessionFactory::class.java)
 
-            return HibernateCursorItemReaderBuilder<People>()
+            return HibernateCursorItemReaderBuilder<PeopleEntity>()
                 .name("hibernateCursorItemReader")
                 .sessionFactory(sessionFactory)
                 .useStatelessSession(true)
-                .queryString("from PeopleModel")
+                .queryString("from PeopleEntity")
                 .build()
         }
 
@@ -113,16 +129,3 @@ class CursorItemReaderTest(
         }
     }
 }
-
-@Entity
-@Table(name = "people")
-data class People(
-    @Id
-    @Column(name = "people_id")
-    val peopleId: Int,
-    val firstName: String,
-    val lastName: String,
-    val age: String,
-    val gender: String,
-    val pick: String
-)
