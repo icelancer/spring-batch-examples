@@ -1,4 +1,4 @@
-package com.icelancer.batch
+package com.icelancer.batch.itemReader
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule

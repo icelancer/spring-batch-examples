@@ -1,4 +1,4 @@
-package com.icelancer.batch
+package com.icelancer.batch.itemReader
 
 import org.hibernate.SessionFactory
 import org.junit.jupiter.api.Assertions
