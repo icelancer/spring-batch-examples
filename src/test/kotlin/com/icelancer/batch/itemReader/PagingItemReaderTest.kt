@@ -122,10 +122,13 @@ class PagingItemReaderTest(
 
         @Bean
         fun jpaPagingItemReader(entityManagerFactory: EntityManagerFactory): JpaPagingItemReader<PeopleEntity> {
+            val parameterValues = mapOf("pick" to "RED")
+
             return JpaPagingItemReaderBuilder<PeopleEntity>()
                 .name("jpaPagingItemReader")
                 .entityManagerFactory(entityManagerFactory)
-                .queryString("select p from PeopleEntity p")
+                .queryString("select p from PeopleEntity p where p.pick = :pick")
+                .parameterValues(parameterValues)
                 .pageSize(10)
                 .build()
         }
